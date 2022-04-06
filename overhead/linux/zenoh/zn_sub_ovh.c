@@ -60,8 +60,8 @@ int main(int argc, char **argv)
 
     zn_undeclare_subscriber(sub);
 
-    znp_start_read_task(s);
-    znp_start_lease_task(s);
+    znp_stop_read_task(s);
+    znp_stop_lease_task(s);
     zn_close(s);
 
     exit(EXIT_SUCCESS);

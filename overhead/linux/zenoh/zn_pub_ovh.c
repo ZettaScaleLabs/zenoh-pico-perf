@@ -57,8 +57,8 @@ int main(int argc, char **argv)
 
     zn_write_ext(s, reskey, (const uint8_t *)data, msg_size, Z_ENCODING_DEFAULT, Z_DATA_KIND_DEFAULT, zn_congestion_control_t_BLOCK);
 
-    znp_start_read_task(s);
-    znp_start_lease_task(s);
+    znp_stop_read_task(s);
+    znp_stop_lease_task(s);
     zn_close(s);
 
     exit(EXIT_SUCCESS);

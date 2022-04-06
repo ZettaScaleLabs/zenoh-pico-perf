@@ -24,23 +24,27 @@
 char *layer = "zenoh-pico";
 char *test = "latency";
 char *name = "publisher";
-char *scenario = "ppub-zenohd-psub";
+char *scenario;
 size_t msg_size = sizeof(size_t) + sizeof(size_t);
 size_t msgs_per_second;
 
 int main(int argc, char **argv)
 {
-    if (argc < 2 || argc > 3)
+    if (argc != 3 && argc != 5)
     {
-        printf("USAGE:\n\tzn_pub_lat <msgs_per_second> [<zenoh-locator>]\n\n");
+        printf("USAGE:\n\tzn_sub_lat <scenario> <msgs_per_second> [<zenoh-locator> <zenoh-mode>]\n\n");
         exit(-1);
     }
 
-    msgs_per_second = atoi(argv[1]);
+    scenario = argv[1];
+    msg_size = atoi(argv[2]);
 
     zn_properties_t *config = zn_config_default();
-    if (argc == 3)
-        zn_properties_insert(config, ZN_CONFIG_PEER_KEY, z_string_make(argv[2]));
+    if (argc == 5)
+    {
+        zn_properties_insert(config, ZN_CONFIG_PEER_KEY, z_string_make(argv[3]));
+        zn_properties_insert(config, ZN_CONFIG_MODE_KEY, z_string_make(argv[4]));
+    }
 
     zn_session_t *s = zn_open(config);
     if (s == 0)
@@ -69,6 +73,10 @@ int main(int argc, char **argv)
 
         usleep(1000000 / msgs_per_second);
     }
+
+    znp_stop_read_task(s);
+    znp_stop_lease_task(s);
+    zn_close(s);
 
     exit(EXIT_SUCCESS);
 }

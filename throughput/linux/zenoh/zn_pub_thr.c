@@ -29,7 +29,7 @@ int msg_size = 0;
 
 int main(int argc, char **argv)
 {
-    if (argc != 3 || argc != 5)
+    if (argc != 3 && argc != 5)
     {
         printf("USAGE:\n\tzn_pub_thr <scenario> <payload_size> [<zenoh-locator> <zenoh-mode>]\n\n");
         exit(-1);
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     if (argc == 5)
     {
         zn_properties_insert(config, ZN_CONFIG_PEER_KEY, z_string_make(argv[3]));
-        zn_properties_insert(config, ZN_CONFIG_PEER_KEY, z_string_make(argv[4]));
+        zn_properties_insert(config, ZN_CONFIG_MODE_KEY, z_string_make(argv[4]));
     }
 
     zn_session_t *s = zn_open(config);
@@ -53,21 +53,17 @@ int main(int argc, char **argv)
     znp_start_read_task(s);
     znp_start_lease_task(s);
 
-    zn_reskey_t reskey = zn_rid(zn_declare_resource(s, zn_rname("/test/thr")));
-    zn_publisher_t *pub = zn_declare_publisher(s, reskey);
-    if (pub == 0)
-        exit(-1);
-
     char *data = (char *)malloc(msg_size);
     memset(data, 1, msg_size);
 
+    zn_reskey_t reskey = zn_rid(zn_declare_resource(s, zn_rname("/test/thr")));
     while (1)
     {
         zn_write_ext(s, reskey, (const uint8_t *)data, msg_size, Z_ENCODING_DEFAULT, Z_DATA_KIND_DEFAULT, zn_congestion_control_t_BLOCK);
     }
 
-    znp_start_read_task(s);
-    znp_start_lease_task(s);
+    znp_stop_read_task(s);
+    znp_stop_lease_task(s);
     zn_close(s);
 
     exit(EXIT_SUCCESS);

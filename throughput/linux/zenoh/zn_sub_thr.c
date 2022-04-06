@@ -62,7 +62,7 @@ void data_handler(const zn_sample_t *sample, const void *arg)
 
 int main(int argc, char **argv)
 {
-    if (argc != 3 || argc != 5)
+    if (argc != 3 && argc != 5)
     {
         printf("USAGE:\n\tzn_sub_thr <scenario> <payload_size> [<zenoh-locator> <zenoh-mode>]\n\n");
         exit(-1);
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
     if (argc == 5)
     {
         zn_properties_insert(config, ZN_CONFIG_PEER_KEY, z_string_make(argv[3]));
-        zn_properties_insert(config, ZN_CONFIG_PEER_KEY, z_string_make(argv[4]));
+        zn_properties_insert(config, ZN_CONFIG_MODE_KEY, z_string_make(argv[4]));
     }
 
     zn_session_t *s = zn_open(config);
@@ -95,8 +95,8 @@ int main(int argc, char **argv)
 
     zn_undeclare_subscriber(sub);
 
-    znp_start_read_task(s);
-    znp_start_lease_task(s);
+    znp_stop_read_task(s);
+    znp_stop_lease_task(s);
     zn_close(s);
 
     exit(EXIT_SUCCESS);
