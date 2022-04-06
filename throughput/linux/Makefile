@@ -13,6 +13,11 @@ all:
 	gcc -O3 -Wall dds-xrce/ddsxrce_pub_thr.c -lmicroxrcedds_client -lmicrocdr -o target/ddsxrce_pub_thr
 	gcc -O3 -Wall dds-xrce/ddsxrce_sub_thr.c -lmicroxrcedds_client -lmicrocdr -o target/ddsxrce_sub_thr
 
+	# OPC-UA
+	gcc -O3 -Wall opc-ua/opcua_pub_thr.c -lopen62541 -o target/opcua_pub_thr
+	gcc -O3 -Wall opc-ua/opcua_sub_thr.c -lopen62541 -o target/opcua_sub_thr
+	gcc -O3 -Wall opc-ua/opcua_server_thr.c -lopen62541 -o target/opcua_server_thr
+
 	# ZENOH-PICO
 	gcc -O3 -Wall -DZENOH_LINUX zenoh/zn_pub_thr.c -lzenohpico -o target/zn_pub_thr
 	gcc -O3 -Wall -DZENOH_LINUX zenoh/zn_sub_thr.c -lzenohpico -o target/zn_sub_thr
