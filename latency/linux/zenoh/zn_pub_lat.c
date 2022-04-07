@@ -37,7 +37,7 @@ int main(int argc, char **argv)
     }
 
     scenario = argv[1];
-    msg_size = atoi(argv[2]);
+    msgs_per_second = atoi(argv[2]);
 
     zn_properties_t *config = zn_config_default();
     if (argc == 5)
