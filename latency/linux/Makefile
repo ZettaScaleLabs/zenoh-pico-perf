@@ -21,6 +21,8 @@ all:
 	# ZENOH-PICO
 	gcc -O3 -Wall -DZENOH_LINUX zenoh/zn_pub_lat.c -lzenohpico -o target/zn_pub_lat
 	gcc -O3 -Wall -DZENOH_LINUX zenoh/zn_sub_lat.c -lzenohpico -o target/zn_sub_lat
+	gcc -O3 -Wall -DZENOH_LINUX zenoh/zn_querier_lat.c -lzenohpico -o target/zn_querier_lat
+	gcc -O3 -Wall -DZENOH_LINUX zenoh/zn_eval_lat.c -lzenohpico -o target/zn_eval_lat
 
 clean:
 	rm -rf target

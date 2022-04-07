@@ -21,6 +21,8 @@ all:
 	# ZENOH-PICO
 	gcc -O3 -Wall -DZENOH_LINUX zenoh/zn_pub_thr.c -lzenohpico -o target/zn_pub_thr
 	gcc -O3 -Wall -DZENOH_LINUX zenoh/zn_sub_thr.c -lzenohpico -o target/zn_sub_thr
+	gcc -O3 -Wall -DZENOH_LINUX zenoh/zn_querier_thr.c -lzenohpico -o target/zn_querier_thr
+	gcc -O3 -Wall -DZENOH_LINUX zenoh/zn_eval_thr.c -lzenohpico -o target/zn_eval_thr
 
 clean:
 	rm -rf target
