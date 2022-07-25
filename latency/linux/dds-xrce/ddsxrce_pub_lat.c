@@ -22,7 +22,7 @@
 #include <uxr/client/client.h>
 #include <ucdr/microcdr.h>
 
-#define DDS_IP "127.0.0.1"
+#define DDS_IP "192.168.11.1"
 #define DDS_PORT "5555"
 #define STREAM_HISTORY  4
 #define BUFFER_SIZE UXR_CONFIG_UDP_TRANSPORT_MTU * STREAM_HISTORY
@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 {
     if (argc < 2)
     {
-        printf("USAGE:\n\tzn_pub_thr <msgs_per_second>\n\n");
+        printf("USAGE:\n\tddsxrce_pub_thr <msgs_per_second>\n\n");
         exit(EXIT_FAILURE);
     }
 

@@ -19,8 +19,6 @@
 #include <open62541/client_config_default.h>
 #include <open62541/client_highlevel.h>
 
-#define N 100000
-
 char *layer = "opc-ua";
 char *test = "overhead";
 char *name = "publisher";

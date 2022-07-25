@@ -28,6 +28,21 @@ char *scenario;
 size_t msg_size = sizeof(size_t) + sizeof(size_t);
 size_t msgs_per_second;
 
+void data_handler(const zn_sample_t *sample, const void *arg)
+{
+    size_t *sec = (size_t *) &sample->value.val[0];
+    size_t *usec = (size_t *) &sample->value.val[sizeof(size_t)];
+
+    struct timeval stop;
+    gettimeofday(&stop, 0);
+
+    double lat = stop.tv_usec - *usec;
+    if (lat <= 0)
+        lat += (stop.tv_sec - *sec) * 1000000;
+
+    printf("%s,%s,%s,%s,%lu,%lu,%f\n", layer, name, test, scenario, msgs_per_second, *sec, lat / 2);
+}
+
 int main(int argc, char **argv)
 {
     if (argc != 3 && argc != 5)
@@ -57,6 +72,11 @@ int main(int argc, char **argv)
     zn_reskey_t reskey = zn_rid(zn_declare_resource(s, zn_rname("/test/thr")));
     zn_publisher_t *pub = zn_declare_publisher(s, reskey);
     if (pub == 0)
+        exit(-1);
+
+    zn_reskey_t rid2 = zn_rid(zn_declare_resource(s, zn_rname("/test/ack")));
+    zn_subscriber_t *sub = zn_declare_subscriber(s, rid2, zn_subinfo_default(), data_handler, NULL);
+    if (sub == 0)
         exit(-1);
 
     char *data = (char *)malloc(msg_size);

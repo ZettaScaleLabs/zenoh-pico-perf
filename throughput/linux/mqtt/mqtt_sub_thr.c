@@ -21,7 +21,7 @@
 
 #include "MQTTAsync.h"
 
-#define MQTT_BROKER   "tcp://127.0.0.1:1883"
+#define MQTT_BROKER   "tcp://192.168.11.1:1883"
 #define MQTT_TOPIC    "/test/thr"
 #define MQTT_CLIENTID "mqtt_sub_thr"
 #define MQTT_QOS      0
