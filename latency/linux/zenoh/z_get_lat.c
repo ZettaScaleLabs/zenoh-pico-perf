@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     msgs_per_second = atoi(argv[2]);
 
     // Initialize Zenoh Session and other parameters
-    z_owned_config_t config = zp_config_default();
+    z_owned_config_t config = z_config_default();
     if (argc == 5) {
         zp_config_insert(z_loan(config), Z_CONFIG_PEER_KEY, z_string_make(argv[3]));
         zp_config_insert(z_loan(config), Z_CONFIG_MODE_KEY, z_string_make(argv[4]));
@@ -67,8 +67,8 @@ int main(int argc, char **argv)
     }
 
     // Start the receive and the session lease loop for zenoh-pico
-    zp_start_read_task(z_loan(s));
-    zp_start_lease_task(z_loan(s));
+    zp_start_read_task(z_loan(s), NULL);
+    zp_start_lease_task(z_loan(s), NULL);
 
     while (1) {
         gettimeofday(&start, 0);
