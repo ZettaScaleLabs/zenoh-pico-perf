@@ -44,8 +44,7 @@ void reply_handler(z_owned_reply_t oreply, void *ctx)
 
 int main(int argc, char **argv)
 {
-    if (argc != 3 && argc != 5)
-    {
+    if (argc != 3 && argc != 5) {
         printf("USAGE:\n\tzn_querier_lat <scenario> <msgs_per_second> [<zenoh-locator> <zenoh-mode>]\n\n");
         exit(-1);
     }

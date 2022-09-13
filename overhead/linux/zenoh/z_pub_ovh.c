@@ -28,8 +28,7 @@ size_t msg_size = sizeof(size_t) + sizeof(size_t);
 
 int main(int argc, char **argv)
 {
-    if (argc < 1)
-    {
+    if (argc < 1) {
         printf("USAGE:\n\tz_pub_ovh [<zenoh-locator>]\n\n");
         exit(-1);
     }
