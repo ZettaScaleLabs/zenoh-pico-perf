@@ -29,9 +29,9 @@ size_t msgs_per_second;
 volatile struct timeval start;
 volatile struct timeval stop;
 
-void reply_handler(z_owned_reply_t oreply, void *ctx)
+void reply_handler(z_owned_reply_t *oreply, void *ctx)
 {
-    if (z_reply_is_ok(&oreply)) {
+    if (z_reply_is_ok(oreply)) {
         struct timeval stop;
         gettimeofday(&stop, 0);
         double lat = stop.tv_usec - start.tv_usec;

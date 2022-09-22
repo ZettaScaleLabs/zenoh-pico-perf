@@ -40,9 +40,9 @@ void print_stats(volatile struct timeval start, volatile struct timeval stop)
     printf("%s,%s,%s,%s,%d,%f\n", layer, name, test, scenario, msg_size, msgs_per_sec);
 }
 
-void reply_handler(z_owned_reply_t oreply, void *ctx)
+void reply_handler(z_owned_reply_t *oreply, void *ctx)
 {
-    if (z_reply_is_ok(&oreply)) {
+    if (z_reply_is_ok(oreply)) {
         if (count == 0) {
             gettimeofday(&start, 0);
             count++;
@@ -82,10 +82,6 @@ int main(int argc, char **argv)
     // Start the receive and the session lease loop for zenoh-pico
     zp_start_read_task(z_loan(s), NULL);
     zp_start_lease_task(z_loan(s), NULL);
-
-    unsigned long long int count = 0;
-    struct timeval start;
-    struct timeval stop;
 
     while (1) {
         z_get_options_t opts = z_get_options_default();
