@@ -25,14 +25,6 @@ char *name = "subscriber";
 char *scenario = "copc-sopc-copc";
 int msg_size = 0;
 
-void print_stats(volatile struct timeval start, volatile struct timeval stop)
-{
-    double t0 = start.tv_sec + ((double)start.tv_usec / 1000000.0);
-    double t1 = stop.tv_sec + ((double)stop.tv_usec / 1000000.0);
-    double msgs_per_sec = N / (t1 - t0);
-    printf("%s,%s,%s,%s,%d,%f\n", layer, name, test, scenario, msg_size, msgs_per_sec);
-}
-
 int main(int argc, char *argv[])
 {
     UA_Client *client = UA_Client_new();
@@ -46,9 +38,6 @@ int main(int argc, char *argv[])
 
     UA_Variant value;
     UA_Variant_init(&value);
-    unsigned long long int count = 0;
-    struct timeval start;
-    struct timeval stop;
     status = UA_Client_readValueAttribute(client, UA_NODEID_STRING(1, "/test/ovh"), &value);
     if(status == UA_STATUSCODE_GOOD && UA_Variant_hasScalarType(&value, &UA_TYPES[UA_TYPES_STRING]))
     {
