@@ -26,54 +26,55 @@ char *layer = "zenoh-pico";
 char *test = "throughput";
 char *name = "subscriber";
 char *scenario = NULL;
-int msg_size = 0;
+int payload_size = 8;
+char *locator = NULL;
+char *mode = "client";
 
-volatile unsigned long long int count = 0;
-volatile struct timeval start;
-volatile struct timeval stop;
+volatile unsigned long long int counter = 0;
 
-void print_stats(volatile struct timeval start, volatile struct timeval stop)
-{
-    double t0 = start.tv_sec + ((double)start.tv_usec / 1000000.0);
-    double t1 = stop.tv_sec + ((double)stop.tv_usec / 1000000.0);
-    double msgs_per_sec = N / (t1 - t0);
-    printf("%s,%s,%s,%s,%d,%f\n", layer, name, test, scenario, msg_size, msgs_per_sec);
-}
 
 void data_handler(const z_sample_t *sample, void *arg)
 {
-    if (count == 0) {
-        gettimeofday(&start, 0);
-        count++;
-    } else if (count < N) {
-        count++;
-    } else {
-        gettimeofday(&stop, 0);
-        print_stats(start, stop);
-        count = 0;
-    }
+    payload_size = sample->payload.len;
+    __atomic_fetch_add(&counter, 1, __ATOMIC_RELAXED);
 }
 
 int main(int argc, char **argv)
 {
-    if (argc != 3 && argc != 5) {
-        printf("USAGE:\n\tz_sub_thr <scenario> <payload_size> [<zenoh-locator> <zenoh-mode>]\n\n");
-        exit(-1);
+    // Parse arguments
+    int c;
+    while((c = getopt(argc, argv, "s:e:m:h")) != -1 ){
+        switch (c) {
+            case 's':
+                scenario = optarg;
+                break;
+            case 'e':
+                locator = optarg;
+                break;
+            case 'm':
+                mode = optarg;
+                break;
+            case 'h':
+                printf("USAGE:\n\tz_sub_thr -s <scenario> -e <zenoh-locator> -m <zenoh-mode> -h <help>\n\n");
+                exit(-1);
+            default:
+                break;
+        }
     }
-
-    scenario = argv[1];
-    msg_size = atoi(argv[2]);
 
     // Initialize Zenoh Session and other parameters
     z_owned_config_t config = z_config_default();
-    if (argc == 5) {
-        zp_config_insert(z_loan(config), Z_CONFIG_PEER_KEY, z_string_make(argv[3]));
-        zp_config_insert(z_loan(config), Z_CONFIG_MODE_KEY, z_string_make(argv[4]));
+    if (locator == NULL) {
+        printf("No locator provied!\n");
+        exit(-1);
     }
+    zp_config_insert(z_loan(config), Z_CONFIG_PEER_KEY, z_string_make(locator));
+    zp_config_insert(z_loan(config), Z_CONFIG_MODE_KEY, z_string_make(mode));
 
     // Open Zenoh session
     z_owned_session_t s = z_open(z_move(config));
     if (!z_check(s)) {
+        printf("Failed to open zenoh session!\n");
         return -1;
     }
 
@@ -84,10 +85,33 @@ int main(int argc, char **argv)
     z_owned_closure_sample_t callback = z_closure(data_handler);
     z_owned_subscriber_t sub = z_declare_subscriber(z_loan(s), z_keyexpr("test/thr"), z_move(callback), NULL);
     if (!z_check(sub)) {
+        printf("Failed to declare subscriber.\n");
         return -1;
     }
 
-    while (1);
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    while (1) {
+        sleep(1);
+        u_int64_t received;
+        __atomic_load(&counter, &received, __ATOMIC_RELAXED);
+        if (received > 0) {
+            clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+            float elapsed = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
+            float msgs_per_sec = (float)received * 1000000.0 / elapsed;
+
+            if (scenario != NULL) {
+                printf("%s,%s,%s,%s,%d,%f\n", layer, name, test, scenario, payload_size, msgs_per_sec);
+            } else {
+                printf("%d,%f\n", payload_size, msgs_per_sec);
+            }
+            fflush(stdout);
+
+            u_int64_t zero = 0;
+            __atomic_exchange(&counter, &zero, &received, __ATOMIC_RELAXED);
+            clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+        }
+    }
 
     z_undeclare_subscriber(z_move(sub));
 
