@@ -20,41 +20,53 @@
 
 #include "zenoh-pico.h"
 
-char *layer = "zenoh-pico";
-char *test = "latency";
-char *name = "subscriber";
-char *scenario;
-size_t msgs_per_second;
-size_t msg_size = sizeof(size_t) + sizeof(size_t);
-char *data = NULL;
-
+char *mode = "client";
+char *locator = NULL;
 z_owned_publisher_t pub;
 
 void data_handler(const z_sample_t *sample, void *arg)
 {
-    z_publisher_put(z_loan(pub), (const uint8_t *)data, msg_size, NULL);
+    z_publisher_put(
+        z_loan(pub),
+        (const uint8_t *)sample->payload.start,
+        sample->payload.len,
+        NULL
+    );
 }
 
 int main(int argc, char **argv)
 {
-    if (argc != 3 && argc != 5) {
-        printf("USAGE:\n\tz_pong_lat <scenario> <msgs_per_second> [<zenoh-locator> <zenoh-mode>]\n\n");
-        exit(-1);
+    // Parse arguments
+    int c;
+    while((c = getopt(argc, argv, "e:m:h")) != -1 ){
+        switch (c) {
+            case 'e':
+                locator = optarg;
+                break;
+            case 'm':
+                mode = optarg;
+                break;
+            case 'h':
+                printf("USAGE:\n\tz_sub_thr -e <zenoh-locator> -m <zenoh-mode> -h <help>\n\n");
+                exit(-1);
+            default:
+                break;
+        }
     }
-
-    scenario = argv[1];
-    msgs_per_second = atoi(argv[2]);
 
     // Initialize Zenoh Session and other parameters
     z_owned_config_t config = z_config_default();
-    if (argc == 5) {
-        zp_config_insert(z_loan(config), Z_CONFIG_PEER_KEY, z_string_make(argv[3]));
-        zp_config_insert(z_loan(config), Z_CONFIG_MODE_KEY, z_string_make(argv[4]));
+    if (locator == NULL) {
+        printf("No locator provied!\n");
+        exit(-1);
     }
+    zp_config_insert(z_loan(config), Z_CONFIG_PEER_KEY, z_string_make(locator));
+    zp_config_insert(z_loan(config), Z_CONFIG_MODE_KEY, z_string_make(mode));
 
     // Open Zenoh session
     z_owned_session_t s = z_open(z_move(config));
     if (!z_check(s)) {
+        printf("Failed to open zenoh session!\n");
         return -1;
     }
 
@@ -62,17 +74,16 @@ int main(int argc, char **argv)
     zp_start_read_task(z_loan(s), NULL);
     zp_start_lease_task(z_loan(s), NULL);
 
-    data = (char *)malloc(msg_size);
-    memset(data, 1, msg_size);
-
     z_owned_closure_sample_t callback = z_closure(data_handler);
-    z_owned_subscriber_t sub = z_declare_subscriber(z_loan(s), z_keyexpr("test/lat"), z_move(callback), NULL);
+    z_owned_subscriber_t sub = z_declare_subscriber(z_loan(s), z_keyexpr("ping"), z_move(callback), NULL);
     if (!z_check(sub)) {
+        printf("Failed to declare subscriber.\n");
         return -1;
     }
 
-    pub = z_declare_publisher(z_loan(s), z_keyexpr("test/lat"), NULL);
+    pub = z_declare_publisher(z_loan(s), z_keyexpr("pong"), NULL);
     if (!z_check(pub)) {
+        printf("Failed to declare publisher.\n");
         return -1;
     }
 
