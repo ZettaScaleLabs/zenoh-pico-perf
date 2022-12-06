@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 all:
 	mkdir -p ./target
 
@@ -18,11 +20,8 @@ all:
 	gcc -O3 -Wall opc-ua/opcua_sub_thr.c -lopen62541 -o target/opcua_sub_thr
 	gcc -O3 -Wall opc-ua/opcua_server_thr.c -lopen62541 -o target/opcua_server_thr
 
-	# ZENOH-PICO
-	gcc -O3 -Wall -DZENOH_LINUX zenoh/z_pub_thr.c -lzenohpico -o target/z_pub_thr
-	gcc -O3 -Wall -DZENOH_LINUX zenoh/z_sub_thr.c -lzenohpico -o target/z_sub_thr
-	gcc -O3 -Wall -DZENOH_LINUX zenoh/z_get_thr.c -lzenohpico -o target/z_get_thr
-	gcc -O3 -Wall -DZENOH_LINUX zenoh/z_queryable_thr.c -lzenohpico -o target/z_queryable_thr
+build_zenoh:
+	@../../scripts/build-zenoh.sh zenoh
 
 clean:
 	rm -rf target
