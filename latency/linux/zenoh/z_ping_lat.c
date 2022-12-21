@@ -36,8 +36,8 @@ void data_handler(const z_sample_t *sample, void *arg)
     size_t *tv_nsec = (size_t *) &sample->payload.start[sizeof(size_t)];
     struct timespec end;
     clock_gettime(CLOCK_MONOTONIC_RAW, &end);
-    float elapsed = (end.tv_sec - *tv_sec) * 1000000 + (end.tv_nsec - *tv_nsec) / 1000;
-    float latency = elapsed / 2.0;
+    double elapsed = (end.tv_sec - *tv_sec) * 1000000 + (end.tv_nsec - *tv_nsec) / 1000;
+    double latency = elapsed / 2.0;
 
     if (scenario != NULL) {
         printf("%s,%s,%s,%s,%.10f,%f\n", layer, name, test, scenario, interval, latency);
