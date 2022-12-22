@@ -6,8 +6,7 @@ mkdir -p $install_dir
 cd $install_dir
 mkdir -p src
 
-# git -C zenoh-pico pull 2> /dev/null || git clone https://github.com/eclipse-zenoh/zenoh-pico
-git -C ./src/zenoh-pico pull 2> /dev/null || git clone https://github.com/cguimaraes/zenoh-pico -b memory-checks ./src/zenoh-pico
+git -C ./src/zenoh-pico pull 2> /dev/null || git clone https://github.com/eclipse-zenoh/zenoh-pico ./src/zenoh-pico
 
 cd ./src/zenoh-pico
 cmake -Bbuild \
