@@ -18,11 +18,8 @@ all:
 	gcc -O3 -Wall opc-ua/opcua_sub_lat.c -lopen62541 -o target/opcua_sub_lat
 	gcc -O3 -Wall opc-ua/opcua_server_lat.c -lopen62541 -o target/opcua_server_lat
 
-	# ZENOH-PICO
-	gcc -O3 -Wall -DZENOH_LINUX zenoh/z_ping_lat.c -lzenohpico -o target/z_ping_lat
-	gcc -O3 -Wall -DZENOH_LINUX zenoh/z_pong_lat.c -lzenohpico -o target/z_pong_lat
-	gcc -O3 -Wall -DZENOH_LINUX zenoh/z_get_lat.c -lzenohpico -o target/z_get_lat
-	gcc -O3 -Wall -DZENOH_LINUX zenoh/z_queryable_lat.c -lzenohpico -o target/z_queryable_lat
+build_zenoh:
+	@../../scripts/build-zenoh.sh zenoh
 
 clean:
 	rm -rf target

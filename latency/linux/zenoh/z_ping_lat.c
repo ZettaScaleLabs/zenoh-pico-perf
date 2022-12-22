@@ -23,46 +23,73 @@
 char *layer = "zenoh-pico";
 char *test = "latency";
 char *name = "publisher";
-char *scenario;
-size_t msg_size = sizeof(size_t) + sizeof(size_t);
-size_t msgs_per_second;
+char *scenario = NULL;
+char *mode = "client";
+char *locator = NULL;
+size_t payload_size = 64;
+double interval = 0;
+
 
 void data_handler(const z_sample_t *sample, void *arg)
 {
-    size_t *sec = (size_t *) &sample->payload.start[0];
-    size_t *usec = (size_t *) &sample->payload.start[sizeof(size_t)];
+    size_t *tv_sec = (size_t *) &sample->payload.start[0];
+    size_t *tv_nsec = (size_t *) &sample->payload.start[sizeof(size_t)];
+    struct timespec end;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    double elapsed = (end.tv_sec - *tv_sec) * 1000000 + (end.tv_nsec - *tv_nsec) / 1000;
+    double latency = elapsed / 2.0;
 
-    struct timeval stop;
-    gettimeofday(&stop, 0);
-
-    double lat = stop.tv_usec - *usec;
-    if (lat <= 0) {
-        lat += (stop.tv_sec - *sec) * 1000000;
+    if (scenario != NULL) {
+        printf("%s,%s,%s,%s,%.10f,%f\n", layer, name, test, scenario, interval, latency);
+    } else {
+        printf("%.10f,%f\n", interval, latency);
     }
-
-    printf("%s,%s,%s,%s,%lu,%lu,%f\n", layer, name, test, scenario, msgs_per_second, *sec, lat / 2);
+    fflush(stdout);
 }
 
 int main(int argc, char **argv)
 {
-    if (argc != 3 && argc != 5) {
-        printf("USAGE:\n\tz_ping_lat <scenario> <msgs_per_second> [<zenoh-locator> <zenoh-mode>]\n\n");
-        exit(-1);
-    }
 
-    scenario = argv[1];
-    msgs_per_second = atoi(argv[2]);
+    // Parse arguments
+    int c;
+    while((c = getopt(argc, argv, "s:e:m:p:i:h")) != -1 ){
+        switch (c) {
+            case 's':
+                scenario = optarg;
+                break;
+            case 'e':
+                locator = optarg;
+                break;
+            case 'm':
+                mode = optarg;
+                break;
+            case 'p':
+                payload_size = atoi(optarg);
+                break;
+            case 'i':
+                interval = atof(optarg);
+                break;
+            case 'h':
+                printf("USAGE:\n\tz_sub_thr -s <scenario> -e <zenoh-locator> -m <zenoh-mode> -p <payload-size> -i <interval> -h <help>\n\n");
+                exit(-1);
+            default:
+                break;
+        }
+    }
 
     // Initialize Zenoh Session and other parameters
     z_owned_config_t config = z_config_default();
-    if (argc == 5) {
-        zp_config_insert(z_loan(config), Z_CONFIG_PEER_KEY, z_string_make(argv[3]));
-        zp_config_insert(z_loan(config), Z_CONFIG_MODE_KEY, z_string_make(argv[4]));
+    if (locator == NULL) {
+        printf("No locator provied!\n");
+        exit(-1);
     }
+    zp_config_insert(z_loan(config), Z_CONFIG_PEER_KEY, z_string_make(locator));
+    zp_config_insert(z_loan(config), Z_CONFIG_MODE_KEY, z_string_make(mode));
 
     // Open Zenoh session
     z_owned_session_t s = z_open(z_move(config));
     if (!z_check(s)) {
+        printf("Failed to open zenoh session!\n");
         return -1;
     }
 
@@ -70,29 +97,30 @@ int main(int argc, char **argv)
     zp_start_read_task(z_loan(s), NULL);
     zp_start_lease_task(z_loan(s), NULL);
 
-    z_owned_publisher_t pub = z_declare_publisher(z_loan(s), z_keyexpr("test/lat"), NULL);
+    z_owned_publisher_t pub = z_declare_publisher(z_loan(s), z_keyexpr("ping"), NULL);
     if (!z_check(pub)) {
+        printf("Failed to declare publisher.\n");
         return -1;
     }
 
     z_owned_closure_sample_t callback = z_closure(data_handler);
-    z_owned_subscriber_t sub = z_declare_subscriber(z_loan(s), z_keyexpr("test/ack"), z_move(callback), NULL);
+    z_owned_subscriber_t sub = z_declare_subscriber(z_loan(s), z_keyexpr("pong"), z_move(callback), NULL);
     if (!z_check(sub)) {
+        printf("Failed to declare subscriber.\n");
         return -1;
     }
 
-    char *data = (char *)malloc(msg_size);
+    char *data = (char *)malloc(payload_size);
     while (1) {
-        struct timeval start;
-        gettimeofday(&start, 0);
+        usleep((useconds_t)(interval * 1000000));
+        memset(data, 0, payload_size);
 
-        memset(data, 0, msg_size);
+        struct timespec start;
+        clock_gettime(CLOCK_MONOTONIC_RAW, &start);
         memcpy(&data[0], &start.tv_sec, sizeof(size_t));
-        memcpy(&data[sizeof(size_t)], &start.tv_usec, sizeof(size_t));
+        memcpy(&data[sizeof(size_t)], &start.tv_nsec, sizeof(size_t));
 
-        z_publisher_put(z_loan(pub), (const uint8_t *)data, msg_size, NULL);
-
-        usleep(1000000 / msgs_per_second);
+        z_publisher_put(z_loan(pub), (const uint8_t *)data, payload_size, NULL);
     }
 
     z_undeclare_publisher(z_move(pub));

@@ -55,3 +55,6 @@ dkms.conf
 
 # Build folders
 target
+
+# Installed libraries
+install
